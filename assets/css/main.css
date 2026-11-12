@@ -4704,14 +4704,19 @@ input, select, textarea {
     height: 100%;
 }
 
-/* Build Checklist Block (Generous Hover Area + Closing Delay) */
+/* Build Checklist Block (Generous Hover Area + Closing Delay + Extended Left Hit-Box) */
 .checklist-block {
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 6px;
-    padding: 1.5rem 2.25rem;
+    border-radius: 6px;/* Extend the outer box 1rem to the left */
+    width: calc(100% + 1rem);
+    margin-left: -1rem;
+    
+    /* Original padding was: padding: 1.5rem 2.25rem; 
+       We add 1rem to the left padding (2.25rem + 1rem = 3.25rem) to keep text in place */
+    padding: 1.5rem 2.25rem 1.5rem 3.25rem;
     margin-top: 2rem;
     text-align: left;
     cursor: pointer;

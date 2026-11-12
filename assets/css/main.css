@@ -4828,8 +4828,11 @@ input, select, textarea {
     display: flex;
     align-items: center;
     gap: 0.65rem;
-    width: 100%;
-    padding: 0.45rem 0.65rem;
+    width: calc(100% + 1rem);
+	margin-left: -1rem;
+	/* Original padding was 0.45rem 0.65rem. 
+       We add the 1rem extension to padding-left so the text stays in place. */
+    padding: 0.45rem 0.65rem 0.45rem 1.65rem;
     border-radius: 4px;
     transition: background 0.2s ease;
 }

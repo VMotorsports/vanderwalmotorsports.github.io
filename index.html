@@ -70,54 +70,11 @@
 								</div>
 
 								<!-- Build Checklist Section Below Video -->
+<!-- Build Checklist Section (Auto-loaded from Google Sheets) -->
 <section class="checklist-block">
     <h3>Hybrid E46 M3 Build Progress <span class="expand-hint"><i class="fas fa-chevron-down"></i></span></h3>
-    <ul class="build-checklist">
-        <!-- Your tasks, subtasks, and sub-subtasks stay here -->
-        <!-- Main Task 1 (Completed) -->
-        <li class="done">
-            <div class="task-row"><i class="fas fa-check-circle"></i> Chassis &amp; Drivetrain Teardown</div>
-            <ul>
-                <li class="done">
-                    <div class="task-row"><i class="fas fa-check-circle"></i> Remove S54 Engine &amp; Subframe</div>
-                </li>
-                <li class="done">
-                    <div class="task-row"><i class="fas fa-check-circle"></i> Strip Rear Differential &amp; Axles</div>
-                </li>
-            </ul>
-        </li>
-
-        <!-- Main Task 2 (In Progress with Subtasks & Sub-subtasks) -->
-        <li class="in-progress">
-            <div class="task-row"><i class="fas fa-spinner fa-spin"></i> High-Voltage Battery Packaging</div>
-            <ul>
-                <li class="done">
-                    <div class="task-row"><i class="fas fa-check-circle"></i> Measure Trunk &amp; Tunnel Clearance</div>
-                </li>
-                <li class="in-progress">
-                    <div class="task-row"><i class="fas fa-spinner fa-spin"></i> Fabricate Battery Enclosure</div>
-                    <ul>
-                        <li class="done">
-                            <div class="task-row"><i class="fas fa-check-circle"></i> CAD Design &amp; Laser Cut Plates</div>
-                        </li>
-                        <li class="in-progress">
-                            <div class="task-row"><i class="fas fa-spinner fa-spin"></i> TIG Weld Aluminum Box</div>
-                        </li>
-                        <li class="pending">
-                            <div class="task-row"><i class="far fa-circle"></i> Install Cooling Plate &amp; Bulkheads</div>
-                        </li>
-                    </ul>
-                </li>
-                <li class="pending">
-                    <div class="task-row"><i class="far fa-circle"></i> Wire BMS &amp; High-Voltage Contactors</div>
-                </li>
-            </ul>
-        </li>
-
-        <!-- Main Task 3 (Not Started) -->
-        <li class="pending">
-            <div class="task-row"><i class="far fa-circle"></i> Custom Wiring Harness &amp; CAN Bus Integration</div>
-        </li>
+    <ul class="build-checklist" id="csv-checklist">
+        <li class="pending"><div class="task-row"><i class="fas fa-spinner fa-spin"></i> Loading build tasks...</div></li>
     </ul>
 </section>
 
@@ -291,6 +248,107 @@
 			<script src="assets/js/main.js"></script>
 
 
+		<script>
+  const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8B_mNx9iN-e9dBSXrGfYsfqDjhGs8r8S3wDhj7YC0YfOcEKhQnsT3ICXAkgVEp60ERtOxgvvGGWQF/pub?output=csv';
+
+  fetch(sheetCsvUrl)
+    .then(response => response.text())
+    .then(csvText => {
+      const lines = csvText.trim().split('\n').slice(1); // Skip header row
+      const tree = {};
+
+      // Helper to cleanly split CSV rows even if a task has a comma inside quotes
+      const parseCsvLine = (row) => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let char of row) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      };
+
+      // Parse rows into a 3-level hierarchy
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const [main, sub, subsub, rawStatus] = parseCsvLine(line);
+        const status = (rawStatus || 'pending').toLowerCase();
+
+        if (!main) return;
+        if (!tree[main]) tree[main] = { status: status, subs: {} };
+
+        if (sub) {
+          if (!tree[main].subs[sub]) tree[main].subs[sub] = { status: status, subsubs: [] };
+          if (subsub) {
+            tree[main].subs[sub].subsubs.push({ name: subsub, status: status });
+          } else {
+            tree[main].subs[sub].status = status;
+          }
+        } else {
+          tree[main].status = status;
+        }
+      });
+
+      const getIcon = (status) => {
+        if (status === 'done') return '<i class="fas fa-check-circle"></i>';
+        if (status === 'in-progress') return '<i class="fas fa-spinner fa-spin"></i>';
+        return '<i class="far fa-circle"></i>';
+      };
+
+      const calcStatus = (statuses, fallback) => {
+        if (!statuses.length) return fallback;
+        if (statuses.every(s => s === 'done')) return 'done';
+        if (statuses.some(s => s === 'done' || s === 'in-progress')) return 'in-progress';
+        return 'pending';
+      };
+
+      let html = '';
+      for (const [mainName, mainData] of Object.entries(tree)) {
+        const subEntries = Object.entries(mainData.subs);
+        const subStatuses = [];
+        let subHtml = '';
+
+        if (subEntries.length > 0) {
+          subHtml += '<ul>';
+          for (const [subName, subData] of subEntries) {
+            const subsubStatuses = subData.subsubs.map(item => item.status);
+            const effectiveSubStatus = calcStatus(subsubStatuses, subData.status);
+            subStatuses.push(effectiveSubStatus);
+
+            let subsubHtml = '';
+            if (subData.subsubs.length > 0) {
+              subsubHtml += '<ul>';
+              subData.subsubs.forEach(item => {
+                subsubHtml += `<li class="${item.status}"><div class="task-row">${getIcon(item.status)} ${item.name}</div></li>`;
+              });
+              subsubHtml += '</ul>';
+            }
+
+            subHtml += `<li class="${effectiveSubStatus}"><div class="task-row">${getIcon(effectiveSubStatus)} ${subName}</div>${subsubHtml}</li>`;
+          }
+          subHtml += '</ul>';
+        }
+
+        const effectiveMainStatus = calcStatus(subStatuses, mainData.status);
+        html += `<li class="${effectiveMainStatus}"><div class="task-row">${getIcon(effectiveMainStatus)} ${mainName}</div>${subHtml}</li>`;
+      }
+
+      document.getElementById('csv-checklist').innerHTML = html;
+    })
+    .catch(() => {
+      document.getElementById('csv-checklist').innerHTML = '<li class="pending"><div class="task-row">Unable to load build checklist</div></li>';
+    });
+</script>
+
+		
 	</body>
 </html>
 

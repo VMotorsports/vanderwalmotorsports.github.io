@@ -249,15 +249,14 @@
 
 
 		<script>
-  const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8B_mNx9iN-e9dBSXrGfYsfqDjhGs8r8S3wDhj7YC0YfOcEKhQnsT3ICXAkgVEp60ERtOxgvvGGWQF/pub?output=csv';
+  const sheetCsvUrl = 'YOUR_PUBLISHED_GOOGLE_SHEET_CSV_URL';
 
   fetch(sheetCsvUrl)
     .then(response => response.text())
     .then(csvText => {
-      const lines = csvText.trim().split('\n').slice(1); // Skip header row
-      const tree = {};
+      const lines = csvText.trim().split('\n').slice(1);
+      const root = {};
 
-      // Helper to cleanly split CSV rows even if a task has a comma inside quotes
       const parseCsvLine = (row) => {
         const result = [];
         let current = '';
@@ -276,25 +275,26 @@
         return result;
       };
 
-      // Parse rows into a 3-level hierarchy
+      // Build recursive tree for up to 6 task columns + 1 status column
       lines.forEach(line => {
         if (!line.trim()) return;
-        const [main, sub, subsub, rawStatus] = parseCsvLine(line);
-        const status = (rawStatus || 'pending').toLowerCase();
+        const cols = parseCsvLine(line);
+        const rawStatus = cols[cols.length - 1] || 'pending';
+        const status = rawStatus.toLowerCase();
+        const path = cols.slice(0, 6).filter(Boolean); // First 6 columns are task depths
 
-        if (!main) return;
-        if (!tree[main]) tree[main] = { status: status, subs: {} };
+        if (!path.length) return;
+        let currentLevel = root;
 
-        if (sub) {
-          if (!tree[main].subs[sub]) tree[main].subs[sub] = { status: status, subsubs: [] };
-          if (subsub) {
-            tree[main].subs[sub].subsubs.push({ name: subsub, status: status });
-          } else {
-            tree[main].subs[sub].status = status;
+        path.forEach((taskName, index) => {
+          if (!currentLevel[taskName]) {
+            currentLevel[taskName] = { status: 'pending', children: {} };
           }
-        } else {
-          tree[main].status = status;
-        }
+          if (index === path.length - 1) {
+            currentLevel[taskName].status = status;
+          }
+          currentLevel = currentLevel[taskName].children;
+        });
       });
 
       const getIcon = (status) => {
@@ -303,45 +303,57 @@
         return '<i class="far fa-circle"></i>';
       };
 
-      const calcStatus = (statuses, fallback) => {
-        if (!statuses.length) return fallback;
-        if (statuses.every(s => s === 'done')) return 'done';
-        if (statuses.some(s => s === 'done' || s === 'in-progress')) return 'in-progress';
-        return 'pending';
+      // Recursively render HTML and roll up child statuses to parent tasks
+      const renderTree = (nodes) => {
+        const entries = Object.entries(nodes);
+        if (!entries.length) return { html: '', statuses: [] };
+
+        let html = '<ul>';
+        const levelStatuses = [];
+
+        entries.forEach(([name, data]) => {
+          const childResult = renderTree(data.children);
+          let effectiveStatus = data.status;
+
+          if (childResult.statuses.length > 0) {
+            if (childResult.statuses.every(s => s === 'done')) {
+              effectiveStatus = 'done';
+            } else if (childResult.statuses.some(s => s === 'done' || s === 'in-progress')) {
+              effectiveStatus = 'in-progress';
+            } else {
+              effectiveStatus = 'pending';
+            }
+          }
+
+          levelStatuses.push(effectiveStatus);
+          html += `<li class="${effectiveStatus}"><div class="task-row">${getIcon(effectiveStatus)} ${name}</div>${childResult.html}</li>`;
+        });
+
+        html += '</ul>';
+        return { html, statuses: levelStatuses };
       };
 
-      let html = '';
-      for (const [mainName, mainData] of Object.entries(tree)) {
-        const subEntries = Object.entries(mainData.subs);
-        const subStatuses = [];
-        let subHtml = '';
+      // Render top level directly into #csv-checklist without extra wrapper <ul>
+      const topEntries = Object.entries(root);
+      let finalHtml = '';
+      topEntries.forEach(([name, data]) => {
+        const childResult = renderTree(data.children);
+        let effectiveStatus = data.status;
 
-        if (subEntries.length > 0) {
-          subHtml += '<ul>';
-          for (const [subName, subData] of subEntries) {
-            const subsubStatuses = subData.subsubs.map(item => item.status);
-            const effectiveSubStatus = calcStatus(subsubStatuses, subData.status);
-            subStatuses.push(effectiveSubStatus);
-
-            let subsubHtml = '';
-            if (subData.subsubs.length > 0) {
-              subsubHtml += '<ul>';
-              subData.subsubs.forEach(item => {
-                subsubHtml += `<li class="${item.status}"><div class="task-row">${getIcon(item.status)} ${item.name}</div></li>`;
-              });
-              subsubHtml += '</ul>';
-            }
-
-            subHtml += `<li class="${effectiveSubStatus}"><div class="task-row">${getIcon(effectiveSubStatus)} ${subName}</div>${subsubHtml}</li>`;
+        if (childResult.statuses.length > 0) {
+          if (childResult.statuses.every(s => s === 'done')) {
+            effectiveStatus = 'done';
+          } else if (childResult.statuses.some(s => s === 'done' || s === 'in-progress')) {
+            effectiveStatus = 'in-progress';
+          } else {
+            effectiveStatus = 'pending';
           }
-          subHtml += '</ul>';
         }
 
-        const effectiveMainStatus = calcStatus(subStatuses, mainData.status);
-        html += `<li class="${effectiveMainStatus}"><div class="task-row">${getIcon(effectiveMainStatus)} ${mainName}</div>${subHtml}</li>`;
-      }
+        finalHtml += `<li class="${effectiveStatus}"><div class="task-row">${getIcon(effectiveStatus)} ${name}</div>${childResult.html}</li>`;
+      });
 
-      document.getElementById('csv-checklist').innerHTML = html;
+      document.getElementById('csv-checklist').innerHTML = finalHtml;
     })
     .catch(() => {
       document.getElementById('csv-checklist').innerHTML = '<li class="pending"><div class="task-row">Unable to load build checklist</div></li>';

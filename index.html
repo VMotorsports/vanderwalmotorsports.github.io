@@ -249,7 +249,15 @@
 
 
 		<script>
-  const sheetCsvUrl = 'hhttps://docs.google.com/spreadsheets/d/e/2PACX-1vS8B_mNx9iN-e9dBSXrGfYsfqDjhGs8r8S3wDhj7YC0YfOcEKhQnsT3ICXAkgVEp60ERtOxgvvGGWQF/pub?output=csv';
+  const sheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8B_mNx9iN-e9dBSXrGfYsfqDjhGs8r8S3wDhj7YC0YfOcEKhQnsT3ICXAkgVEp60ERtOxgvvGGWQF/pub?output=csv';
+
+  // Converts your Google Sheets status words (or checkboxes) into 'done', 'in-progress', or 'pending'
+  const normalizeStatus = (raw) => {
+    const s = (raw || '').trim().toLowerCase();
+    if (['done', 'complete', 'completed', 'finished', 'true'].includes(s)) return 'done';
+    if (['in-progress', 'in progress', 'working', 'active', 'started', 'thinking about it'].includes(s)) return 'in-progress';
+    return 'pending';
+  };
 
   fetch(sheetCsvUrl)
     .then(response => response.text())
@@ -282,7 +290,7 @@
         const [wbs, name, rawStatus] = parseCsvLine(line);
         if (!wbs || !name) return;
 
-        const status = (rawStatus || 'pending').toLowerCase();
+        const status = normalizeStatus(rawStatus);
         map[wbs] = { wbs, name, status, children: [] };
       });
 

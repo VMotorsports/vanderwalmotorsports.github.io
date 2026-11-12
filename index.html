@@ -235,3 +235,28 @@
 
 	</body>
 </html>
+
+
+
+<script>
+  const channelId = 'UUoWplp04TAlL0t7DMFnZmLw';
+  const rssUrl = `https://youtube.com{channelId}`;
+  const apiUrl = `https://rss2json.com{encodeURIComponent(rssUrl)}`;
+
+  fetch(apiUrl)
+    .then(response => response.json())
+    .then(data => {
+      if (data.items && data.items.length > 0) {
+        const rawDate = new Date(data.items[0].pubDate);
+        const formattedDate = rawDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        document.getElementById('latest-video-date').textContent = formattedDate;
+      }
+    })
+    .catch(() => {
+      document.getElementById('latest-video-date').textContent = '';
+    });
+</script>

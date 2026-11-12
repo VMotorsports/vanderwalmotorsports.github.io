@@ -4704,14 +4704,14 @@ input, select, textarea {
     height: 100%;
 }
 
-/* Build Checklist Block (6-Level Progressive Hover) */
+/* Build Checklist Block (Generous Hover Area + Closing Delay) */
 .checklist-block {
     background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 6px;
-    padding: 1.25rem 1.75rem;
+    padding: 1.5rem 2.25rem;
     margin-top: 2rem;
     text-align: left;
     cursor: pointer;
@@ -4747,18 +4747,20 @@ input, select, textarea {
     transform: rotate(180deg);
 }
 
-/* Level 1: Collapsed until main box is hovered */
+/* Level 1: Collapsed by default, with a 0.35s grace delay before closing */
 .checklist-block > .build-checklist {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
-    transition: max-height 0.55s ease, opacity 0.35s ease;
+    transition: max-height 0.55s ease 0.35s, opacity 0.35s ease 0.35s;
 }
 
+/* Opens immediately (0s delay) when hovered */
 .checklist-block:hover > .build-checklist,
 .checklist-block:focus-within > .build-checklist {
     max-height: 4000px;
     opacity: 1;
+    transition: max-height 0.55s ease 0s, opacity 0.35s ease 0s;
 }
 
 .build-checklist,
@@ -4770,7 +4772,7 @@ input, select, textarea {
 
 /* Main Tasks (Depth 1) */
 .build-checklist > li {
-    padding: 0.65rem 0;
+    padding: 0.5rem 0;
     border-bottom: 1px solid rgba(0, 0, 0, 0.07);
     font-size: 1.05rem;
     font-weight: 700;
@@ -4780,42 +4782,34 @@ input, select, textarea {
     border-bottom: none;
 }
 
-/* All Nested Levels (Depths 2 through 6) */
+/* All Nested Levels: Forgiving 0.3s closing delay so brief mouse slips don't snap shut */
 .build-checklist ul {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
     margin-top: 0;
-    margin-left: 1.1rem;
-    padding-left: 0.85rem;
+    margin-left: 0.75rem;
+    padding-left: 1.2rem;
     border-left: 2px solid rgba(0, 0, 0, 0.14);
-    transition: max-height 0.45s ease, opacity 0.3s ease, margin-top 0.3s ease;
+    transition: max-height 0.4s ease 0.3s, opacity 0.25s ease 0.3s, margin-top 0.25s ease 0.3s;
 }
 
-/* Dashed line on alternating depths (Depths 3 and 5) */
-.build-checklist ul ul {
-    border-left-style: dashed;
-}
+.build-checklist ul ul { border-left-style: dashed; }
+.build-checklist ul ul ul { border-left-style: solid; }
+.build-checklist ul ul ul ul { border-left-style: dashed; }
 
-.build-checklist ul ul ul {
-    border-left-style: solid;
-}
-
-.build-checklist ul ul ul ul {
-    border-left-style: dashed;
-}
-
-/* Expand next depth when hovering over its parent task */
+/* Expand immediately (0s delay) on hover */
 .build-checklist li:hover > ul,
 .build-checklist li:focus-within > ul {
     max-height: 2500px;
     opacity: 1;
-    margin-top: 0.35rem;
+    margin-top: 0.25rem;
+    transition: max-height 0.45s ease 0s, opacity 0.3s ease 0s, margin-top 0.25s ease 0s;
 }
 
-/* Subtle font size scaling across depths */
+/* Subtle font scaling */
 .build-checklist ul li {
-    padding: 0.3rem 0;
+    padding: 0.15rem 0;
     font-size: 0.95rem;
     font-weight: 600;
 }
@@ -4829,21 +4823,24 @@ input, select, textarea {
     font-size: 0.85rem;
 }
 
-/* Visual cue on any task that has nested subtasks */
-.build-checklist li:has(> ul) > .task-row {
-    cursor: pointer;
-}
-
-.build-checklist li:has(> ul):hover > .task-row {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-/* Status Row Alignment & Colors */
+/* Larger Full-Width Hit-Box on Every Task Row (No dead gaps between rows) */
 .task-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+/* Highlight the active row so you can clearly see where your hover zone is */
+.build-checklist li:hover > .task-row {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.build-checklist li:has(> ul) > .task-row {
+    cursor: pointer;
 }
 
 li.done > .task-row { color: #212931; }

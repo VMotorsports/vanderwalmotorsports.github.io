@@ -4859,3 +4859,8 @@ li.in-progress > .task-row i { color: #e67e22; font-size: 1.05em; }
 
 li.pending > .task-row { color: #687078; }
 li.pending > .task-row i { color: #95a5a6; font-size: 1.05em; }
+
+/* Lock message box size */
+textarea {
+	resize: vertical;
+}

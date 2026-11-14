@@ -185,9 +185,19 @@
 				<!-- Footer -->
 <footer id="footer">
 	<section>
-		<!-- Replace YOUR_FORM_ID with your actual Formspree endpoint -->
-		<form method="POST" action="https://formspree.io/f/mrpqeygj">
-			<input type="hidden" name="_next" value="https://github.io" />
+		<form method="POST" action="https://web3forms.com">
+			<!-- Paste your Web3Forms Access Key below -->
+			<input type="hidden" name="access_key" value="ff54a862-db4a-49c1-910c-88f83d2936e7" />
+			
+			<!-- Redirects visitors to your own page after submitting -->
+			<input type="hidden" name="redirect" value="https://github.io" />
+			
+			<!-- Optional: Customizes the email subject line in your Gmail -->
+			<input type="hidden" name="subject" value="New Message from Vanderwal Motorsports Website" />
+
+			<!-- Optional: Hidden honeypot field to block spam bots -->
+			<input type="checkbox" name="botcheck" style="display: none;" />
+
 			<div class="fields">
 				<div class="field">
 					<label for="name">Name</label>
@@ -209,9 +219,9 @@
 	</section>
 	<section class="split contact">
 		<section class="alt">
-			<h3>Address</h3>
-			<p>1234 Somewhere Road #87257<br />
-			Deland, FL 32720</p>
+			<h3>Location</h3>
+			<p>Deland, FL 32720<br />
+			</p>
 		</section>
 		<section>
 			<h3>Phone</h3>
